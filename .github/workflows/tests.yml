@@ -1,0 +1,91 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Nightly, for the layers too slow or too environment-dependent to gate a PR.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  # The fast layer. No browser, no deployed environment, so it can gate every
+  # pull request without coupling the build to anyone else's uptime.
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - run: npm run test:api
+        env:
+          ENVIRONMENT: ci
+          # Secrets are never placed in a job's environment automatically.
+          # Every one a test reads has to be mapped explicitly, here.
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-report
+          path: playwright-report/
+          retention-days: 7
+
+  # Browser layers. Split from the API job so a UI outage cannot fail a build
+  # whose service-level tests all passed.
+  ui:
+    runs-on: ubuntu-latest
+    # Only where a deployed environment exists to point at.
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+        env:
+          ENVIRONMENT: ci
+          UI_BASE_URL: ${{ vars.UI_BASE_URL }}
+          APP_USERNAME: ${{ secrets.APP_USERNAME }}
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-report
+          path: playwright-report/
+          retention-days: 7
+
+  # Cross-system flows: slowest and most environment-dependent, so nightly
+  # rather than on every change.
+  e2e:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          ENVIRONMENT: ci
+          UI_BASE_URL: ${{ vars.UI_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          APP_USERNAME: ${{ secrets.APP_USERNAME }}
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-report
+          path: playwright-report/
+          retention-days: 14
