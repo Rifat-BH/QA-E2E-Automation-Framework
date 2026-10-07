@@ -1,0 +1,22 @@
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Captured sign-in state. Holds live session cookies.
+.auth/
+
+# Machine-specific and secret values.
+config/.env.local
+config/.env.*.local
+.env
+
+# Cross-process locks taken by shared-resource tests.
+.locks/
+
+.DS_Store
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,37 @@
+{
+  "name": "qa-automation-framework",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Layered Playwright test framework: API, UI, end-to-end and acceptance suites behind one set of fixtures.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:ui": "playwright test --project=ui",
+    "test:e2e": "playwright test --project=e2e",
+    "test:acceptance": "playwright test --project=acceptance",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "verify": "npm run typecheck && npm run lint"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.14.0",
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.9.0",
+    "dotenv": "^16.4.5",
+    "eslint": "^9.14.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.14.0",
+    "zod": "^3.23.8"
+  }
+}
